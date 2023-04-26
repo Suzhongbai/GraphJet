@@ -19,6 +19,9 @@ package com.twitter.graphjet.algorithms.salsa.fullgraph;
 
 import com.twitter.graphjet.algorithms.salsa.SalsaNodeVisitor;
 
+//继承了LeftSalsaIteration类
+// 为推荐构建社会证明？
+
 public class FinalSalsaIteration extends LeftSalsaIteration {
   /**
    * This constructs a left iteration that will also construct social proof for the
@@ -27,6 +30,8 @@ public class FinalSalsaIteration extends LeftSalsaIteration {
    * @param salsaInternalState  is the internal state to use
    */
   public FinalSalsaIteration(SalsaInternalState salsaInternalState) {
+    //super 调用父类的构造方法 且必须在构造方法的第一行
+    //只能出现在子类或者构造方法中
     super(
         salsaInternalState,
         new SalsaNodeVisitor.NodeVisitorWithSocialProof(
