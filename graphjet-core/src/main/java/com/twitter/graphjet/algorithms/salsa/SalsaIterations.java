@@ -13,7 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+/**
+总的来说这个文件用来实现SALSA的逻辑
+但具体怎么实现的，我还没有看懂
+一个SalsaIterations类，里面写了三个函数，分别是runSalsaIterations、seedLeftSideForFirstIteration和resetWithRequest
+其中第一个函数runSalsaIterations是从左到右再从右到左随机游走
+第二个函数被第一个函数在一开始调用 感觉是随机种子之类的 还有权重啥的
+第三个函数就是对新来的请求重置内部状态
+2023.4.26
+*/
 
 package com.twitter.graphjet.algorithms.salsa;
 
@@ -21,20 +29,26 @@ import java.util.Random;
 
 import com.google.common.annotations.VisibleForTesting;
 
+// slf4j是接口，定义了8个级别的log优先级从高到低依次为：OFF、FATAL、ERROR、WARN、INFO、DEBUG、TRACE、 ALL。
 import org.slf4j.Logger;
+//SLF4J获取logger的方式是通过LoggerFactory，LoggerFactory主要是用来打印日志的
 import org.slf4j.LoggerFactory;
 
 import com.twitter.graphjet.bipartite.api.LeftIndexedBipartiteGraph;
 
+//fastutil扩展了 Java集合框架，通过提供特定类型的map、set、list和queue
+//以及小内存占用、快速访问和插入；也提供大（64位）array、set 和 list，以及快速、实用的二进制文件和文本文件的I/O类
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
 /**
  * This class implements the logic of SALSA iterations.
  */
+// 这个类实现了SALAS的迭代的逻辑
 public class SalsaIterations<T extends LeftIndexedBipartiteGraph> {
+  //使用指定类初始化日志对象，在日志输出的时候，可以打印出日志信息所在类
   private static final Logger LOG = LoggerFactory.getLogger("graph");
-
+  
   private final CommonInternalState<T> salsaInternalState;
   private final SalsaStats salsaStats;
   private final SingleSalsaIteration leftSalsaIteration;
@@ -60,7 +74,9 @@ public class SalsaIterations<T extends LeftIndexedBipartiteGraph> {
     this.rightSalsaIteration = rightSalsaIteration;
     this.finalSalsaIteration = finalSalsaIteration;
   }
-
+  //从查询节点运行多个独立的随机游走 同时进行所有的随机游走 一次一步
+  // 从左边开始 随机游走一步 然后再从右边开始 随机游走一步
+  // 算法保存了访问右边节点的次数 之后被用来从结果集中选择top个节点
   /**
    * Main entry point to run the SALSA iterations. We do a monte-carlo implementation of the SALSA
    * algorithm in that we run multiple independent random walks from the queryNode, which then
@@ -74,21 +90,26 @@ public class SalsaIterations<T extends LeftIndexedBipartiteGraph> {
    * @param salsaRequest        is the new incoming salsa request
    * @param random              is used for making all the random choices in SALSA
    */
+  // 定义 runSalsaIterations函数 两个参数 一个是请求 一个是随机数
+  // 这个函数是什么功能？ 随机游走
   public void runSalsaIterations(SalsaRequest salsaRequest, Random random) {
+    // 开始重置内部状态
     LOG.info("SALSA: starting to reset internal state");
     resetWithRequest(salsaRequest, random);
     LOG.info("SALSA: done resetting internal state");
-
+    //生成第一次迭代的随机种子
     seedLeftSideForFirstIteration();
     LOG.info("SALSA: done seeding");
     boolean isForwardIteration = true;
     SingleSalsaIteration singleSalsaIteration = leftSalsaIteration;
-
+    
     for (int i = 0; i < salsaInternalState.getSalsaRequest().getMaxRandomWalkLength(); i++) {
+      // 在随机游走的步数内 细致的逻辑？ 
       if (isForwardIteration) {
         singleSalsaIteration.runSingleIteration();
         singleSalsaIteration = rightSalsaIteration;
       } else {
+        // 为什么是小于这个数？
         if (i < salsaInternalState.getSalsaRequest().getMaxRandomWalkLength() - 2) {
           singleSalsaIteration.runSingleIteration();
           singleSalsaIteration = leftSalsaIteration;
@@ -97,13 +118,17 @@ public class SalsaIterations<T extends LeftIndexedBipartiteGraph> {
           singleSalsaIteration = finalSalsaIteration;
         }
       }
+      // 来回横跳 
       isForwardIteration = !isForwardIteration;
     }
   }
-
+  
+  // 这个函数是什么功能？ 在runSalsaIterations函数开始的时候被调用了
   @VisibleForTesting
   protected void seedLeftSideForFirstIteration() {
+    //从请求中获得要查询的节点
     long queryNode = salsaInternalState.getSalsaRequest().getQueryNode();
+    //setNumDirectNeighbors这个方法是干嘛的？
     salsaStats.setNumDirectNeighbors(
         salsaInternalState.getBipartiteGraph().getLeftNodeDegree(queryNode));
 
@@ -113,6 +138,7 @@ public class SalsaIterations<T extends LeftIndexedBipartiteGraph> {
 
     double totalWeight = 0.0;
     for (Long2DoubleMap.Entry entry : seedNodesWithWeight.long2DoubleEntrySet()) {
+      // 和节点的度有关？
       if (salsaInternalState.getBipartiteGraph().getLeftNodeDegree(entry.getLongKey())
           > 0) {
         totalWeight += entry.getDoubleValue();
@@ -122,6 +148,7 @@ public class SalsaIterations<T extends LeftIndexedBipartiteGraph> {
 
     // If there is a pre-specified weight, we let it take precedence, but if not, then we reset
     // weights in accordance with the fraction of weight requested for the query node.
+    // 如果有一个预先指定的权重，我们让它优先，但如果没有，那么我们根据查询节点请求的权重分数重置权重。
     if (!seedNodesWithWeight.containsKey(queryNode)
         && salsaInternalState.getBipartiteGraph().getLeftNodeDegree(queryNode) > 0) {
       double queryNodeWeight = 1.0;
@@ -152,6 +179,7 @@ public class SalsaIterations<T extends LeftIndexedBipartiteGraph> {
    * @param random              is used for making all the random choices in SALSA
    */
   @VisibleForTesting
+  // 对于新来的请求重置内部状态
   protected void resetWithRequest(SalsaRequest salsaRequest, Random random) {
     salsaInternalState.resetWithRequest(salsaRequest);
     leftSalsaIteration.resetWithRequest(salsaRequest, random);
