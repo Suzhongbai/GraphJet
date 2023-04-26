@@ -36,6 +36,8 @@ import com.twitter.graphjet.stats.StatsReceiver;
  * This is the entry point to the SALSA algorithm.
  */
 public class Salsa implements RecommendationAlgorithm<SalsaRequest, SalsaResponse> {
+  // final 修饰表示不可更改，常量
+  // static 修饰的变量是不管new了多少个实例，也只创建一次，节省空间
   private static final Logger LOG = LoggerFactory.getLogger("graph");
 
   private final SalsaIterations<BipartiteGraph> salsaIterations;
