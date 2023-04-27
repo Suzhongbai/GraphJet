@@ -23,7 +23,7 @@ import com.twitter.graphjet.hashing.SmallArrayBasedLongToDoubleMap;
 
 import it.unimi.dsi.fastutil.longs.Long2DoubleMap;
 import it.unimi.dsi.fastutil.longs.LongSet;
-
+//这个类封装了SALSA的请求 
 /**
  * This class encapsulates a SALSA request. This is meant to be used only via the
  * {@link SalsaRequestBuilder}.
@@ -42,15 +42,15 @@ public class SalsaRequest extends RecommendationRequest {
 
   /**
    * The constructor should only be called via {@link SalsaRequestBuilder}.
-   * @param queryNode                 is the query node for running SALSA
+   * @param queryNode                 is the query node for running SALSA 
    * @param leftSeedNodesWithWeight   is the set of seed nodes to use for SALSA, with weights being
    *                                  the proportion of random walks to start here. We do NOT assume
    *                                  that the queryNode is added to this.
-   * @param toBeFiltered              is the set of RHS nodes to be filtered from the output
+   * @param toBeFiltered              is the set of RHS nodes to be filtered from the output 这个RHS节点到底是个啥
    * @param numRandomWalks            is the total number of random walks to run
    * @param maxRandomWalkLength       is the maximum length of a random walk
    * @param resetProbability          is the probability of reset in SALSA. Note that reset is only
-   *                                  done on backward iterations.
+   *                                  done on backward iterations. 是 SALSA 中重置的概率。请注意，重置仅在向后迭代时进行。
    * @param maxNumResults             is the maximum number of results that SALSA will return
    * @param maxSocialProofSize        is the maximum size of social proof per type to return. Set
    *                                  this to 0 to return no social proof
@@ -135,7 +135,7 @@ public class SalsaRequest extends RecommendationRequest {
    * filter the given result
    * @param result is the node to check for filtering
    * @param socialProofs is the socialProofs of different types associated with the node
-   * @return true if the node should be discarded, false otherwise
+   * @return true if the node should be discarded, false otherwise 如果节点被丢弃就返回True
    */
   public boolean filterResult(Long result, SmallArrayBasedLongToDoubleMap[] socialProofs) {
     return resultFilterChain != null && resultFilterChain.filterResult(result, socialProofs);
