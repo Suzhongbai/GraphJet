@@ -19,10 +19,12 @@ package com.twitter.graphjet.algorithms.salsa;
 
 import java.util.Random;
 
+// 实现日志功能
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+这个类封装了单个迭代的逻辑
  * This class encapsulates the logic of a single iteration.
  */
 public abstract class SingleSalsaIteration {
@@ -31,6 +33,7 @@ public abstract class SingleSalsaIteration {
   protected Random random;
 
   /**
+    实现只需要编写这个函数，该函数捕获运行单个迭代的所有逻辑。这个函数还需要更新内部状态
    * Implementations need to write only this single function that captures all the logic of
    * running a single iteration. This function is also expected to update the internal state,
    * include {@link com.twitter.graphjet.algorithms.salsa.SalsaStats} appropriately.
